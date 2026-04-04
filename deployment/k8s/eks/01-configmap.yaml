@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legalops-config
+  namespace: legalops
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  DB_HOST: "REPLACE_WITH_RDS_ENDPOINT"
+  DB_PORT: "5432"
+  DB_NAME: "legalops"
+  DB_USER: "legalops"
+  DB_SSL: "true"
+  REDIS_HOST: "REPLACE_WITH_ELASTICACHE_ENDPOINT"
+  REDIS_PORT: "6379"
+  STORAGE_DRIVER: "s3"
+  S3_REGION: "ap-south-1"
+  S3_BUCKET: "legalops-documents-prod"
+  S3_FORCE_PATH_STYLE: "false"
+  SARVAM_API_BASE_URL: "https://api.sarvam.ai"
+  SARVAM_OCR_CONFIDENCE_THRESHOLD: "0.7"
+  # Keycloak (HLD aligned)
+  KEYCLOAK_URL: "https://REPLACE_WITH_YOUR_DOMAIN/auth"
+  KEYCLOAK_REALM: "legal-opinion-saas"
+  KEYCLOAK_CLIENT_ID: "legal-opinion-api"
+  KEYCLOAK_FRONTEND_CLIENT_ID: "legal-opinion-web"

@@ -1,0 +1,83 @@
+# Keycloak – EKS production deployment
+# Uses Amazon RDS PostgreSQL as backing store (separate DB: keycloak).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: keycloak
+  namespace: legalops
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: keycloak
+  template:
+    metadata:
+      labels:
+        app: keycloak
+    spec:
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:24.0
+          args:
+            - start
+            - --cache=ispn
+            - --cache-stack=jdbc-ping
+          env:
+            - name: KEYCLOAK_ADMIN
+              value: "admin"
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: legalops-secrets
+                  key: KEYCLOAK_ADMIN_PASSWORD
+            - name: KC_DB
+              value: postgres
+            - name: KC_DB_URL
+              value: "jdbc:postgresql://REPLACE_WITH_RDS_ENDPOINT:5432/keycloak"
+            - name: KC_DB_USERNAME
+              value: "keycloak"
+            - name: KC_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: legalops-secrets
+                  key: KEYCLOAK_DB_PASSWORD
+            - name: KC_HOSTNAME
+              value: "REPLACE_WITH_YOUR_DOMAIN"
+            - name: KC_HTTP_RELATIVE_PATH
+              value: "/auth"
+            - name: KC_HTTP_ENABLED
+              value: "true"
+            - name: KC_PROXY
+              value: edge
+          ports:
+            - containerPort: 8080
+            - containerPort: 7800
+          readinessProbe:
+            httpGet:
+              path: /auth/realms/legal-opinion-saas
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: keycloak-svc
+  namespace: legalops
+spec:
+  selector:
+    app: keycloak
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: clustering
+      port: 7800
+      targetPort: 7800

@@ -1,0 +1,94 @@
+# Local e2e compose stack
+# Usage:
+#   cp .env.example .env
+#   docker compose up --build
+#
+# Access:
+#   Frontend  http://localhost
+#   Backend   http://localhost:3000/api/docs
+#   Keycloak  http://localhost/auth
+
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: legalops
+      POSTGRES_USER: legalops
+      POSTGRES_PASSWORD: Legalops@123
+    ports:
+      - '5432:5432'
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U legalops']
+      interval: 10s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: Keycloak@1234
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_RELATIVE_PATH: /auth
+    ports:
+      - '8080:8080'
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+      - ../keycloak:/opt/keycloak/data/import:ro
+
+  backend:
+    build:
+      context: ../../backend
+      dockerfile: Dockerfile
+    env_file: .env
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      DB_NAME: legalops
+      DB_USER: legalops
+      DB_PASSWORD: Legalops@123
+      REDIS_HOST: redis
+      STORAGE_DRIVER: local
+      LOCAL_STORAGE_PATH: /app/documents
+      KEYCLOAK_URL: http://keycloak:8080/auth
+      KEYCLOAK_REALM: legal-opinion-saas
+      KEYCLOAK_CLIENT_ID: legal-opinion-api
+    ports:
+      - '3000:3000'
+    volumes:
+      - documents_data:/app/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    ports:
+      - '80:80'
+    depends_on:
+      - backend
+
+volumes:
+  pg_data:
+  redis_data:
+  keycloak_data:
+  documents_data:

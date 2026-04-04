@@ -1,0 +1,105 @@
+{
+  "realm": "legal-opinion-saas",
+  "enabled": true,
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "roles": {
+    "realm": [
+      {
+        "name": "firm_admin"
+      },
+      {
+        "name": "senior_advocate"
+      },
+      {
+        "name": "panel_advocate"
+      },
+      {
+        "name": "paralegal"
+      },
+      {
+        "name": "super_admin"
+      },
+      {
+        "name": "tenant_branding_manager"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "legal-opinion-web",
+      "name": "Legal Opinion Web",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": [
+        "http://localhost/*",
+        "http://localhost:5173/*",
+        "http://127.0.0.1/*",
+        "http://127.0.0.1:5173/*",
+        "http://legalops.local/*"
+      ],
+      "webOrigins": [
+        "http://localhost",
+        "http://localhost:5173",
+        "http://127.0.0.1",
+        "http://127.0.0.1:5173",
+        "http://legalops.local"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "tenant_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "tenant_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "legal-opinion-api",
+      "name": "Legal Opinion API",
+      "protocol": "openid-connect",
+      "bearerOnly": true
+    }
+  ],
+  "users": [
+    {
+      "username": "firmadmin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Firm",
+      "lastName": "Admin",
+      "email": "firmadmin@legalops.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Legalops@123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "firm_admin"
+      ],
+      "attributes": {
+        "tenant_id": [
+          "11111111-1111-1111-1111-111111111111"
+        ]
+      }
+    }
+  ]
+}

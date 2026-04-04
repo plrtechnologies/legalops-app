@@ -1,0 +1,2 @@
+-- Intentionally empty. TypeORM synchronize handles all schema creation.
+-- This file is kept so existing volumes don't fail on missing file reference.

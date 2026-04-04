@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: legalops-config
+  namespace: legalops
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  # Set DB_HOST to your existing PostgreSQL service name or IP on the cluster.
+  DB_HOST: "REPLACE_WITH_YOUR_POSTGRES_HOST"
+  DB_PORT: "5432"
+  DB_NAME: "legalops"
+  DB_USER: "legalops"
+  DB_SSL: "false"
+  REDIS_HOST: "redis-svc"
+  REDIS_PORT: "6379"
+  STORAGE_DRIVER: "nfs"
+  NFS_STORAGE_PATH: "/mnt/documents"
+  SARVAM_API_BASE_URL: "https://api.sarvam.ai"
+  SARVAM_OCR_CONFIDENCE_THRESHOLD: "0.7"
+  # Keycloak (HLD aligned)
+  KEYCLOAK_URL: "http://keycloak-svc:8080/auth"
+  KEYCLOAK_REALM: "legal-opinion-saas"
+  KEYCLOAK_CLIENT_ID: "legal-opinion-api"
+  KEYCLOAK_FRONTEND_CLIENT_ID: "legal-opinion-web"

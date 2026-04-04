@@ -1,0 +1,28 @@
+# NFS PersistentVolume and PVC for document storage.
+# Update nfs.server and nfs.path to match your NFS server before applying.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: legalops-documents-pv
+spec:
+  capacity:
+    storage: 50Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  nfs:
+    server: 192.168.1.12    # <-- set your NFS server IP
+    path: /exports/legalops-documents
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: legalops-documents-pvc
+  namespace: legalops
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 50Gi
+  volumeName: legalops-documents-pv
