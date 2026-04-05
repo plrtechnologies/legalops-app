@@ -2,9 +2,10 @@ import { LlmProvider } from './llm-provider.interface';
 import { OpenAiProvider } from './openai.provider';
 import { AnthropicProvider } from './anthropic.provider';
 import { GoogleProvider } from './google.provider';
+import { SarvamProvider } from './sarvam.provider';
 
 export function createLlmProvider(config: {
-  provider: 'openai' | 'anthropic' | 'google';
+  provider: 'openai' | 'anthropic' | 'google' | 'sarvam';
   apiKey: string;
   model: string;
   maxTokens: number;
@@ -17,6 +18,8 @@ export function createLlmProvider(config: {
       return new AnthropicProvider(config.apiKey, config.model, config.maxTokens, config.temperature);
     case 'google':
       return new GoogleProvider(config.apiKey, config.model, config.maxTokens, config.temperature);
+    case 'sarvam':
+      return new SarvamProvider(config.apiKey, config.model, config.maxTokens, config.temperature);
     default:
       throw new Error(`Unsupported LLM provider: ${config.provider}`);
   }

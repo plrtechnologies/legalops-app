@@ -37,13 +37,14 @@ export class OpinionRequestsController {
   }
 
   @Post()
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PARALEGAL)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PARALEGAL)
   create(@Req() req: Request, @CurrentUser() user: User, @Body() dto: CreateOpinionRequestDto) {
     return this.service.create(user.tenantId, user.id, dto, this.audit(req, user));
   }
 
   @Get()
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -55,6 +56,7 @@ export class OpinionRequestsController {
 
   @Get(':id')
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -65,7 +67,7 @@ export class OpinionRequestsController {
   }
 
   @Patch(':id/status')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   updateStatus(
     @Req() req: Request,
     @CurrentUser() user: User,
@@ -76,7 +78,7 @@ export class OpinionRequestsController {
   }
 
   @Patch(':id/assign')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   assign(
     @Req() req: Request,
     @CurrentUser() user: User,
@@ -87,7 +89,7 @@ export class OpinionRequestsController {
   }
 
   @Delete(':id')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   remove(@Req() req: Request, @CurrentUser() user: User, @Param('id') id: string) {
     return this.service.remove(user.tenantId, id, this.audit(req, user));
   }

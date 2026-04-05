@@ -27,7 +27,7 @@ export default function DashboardLayout() {
   const { user, logout } = useAuthStore();
   const branding = useTenantBrandingStore((s) => s.branding);
 
-  const isFirmAdmin = user?.roles?.includes('firm_admin');
+  const isFirmAdmin = user?.roles?.includes('firm_admin') || user?.roles?.includes('super_admin');
 
   const menuItems: MenuProps['items'] = useMemo(() => {
     const items: MenuProps['items'] = [
@@ -53,7 +53,7 @@ export default function DashboardLayout() {
         label: 'Audit Log',
       });
     }
-    if (user?.roles?.includes('firm_admin') || user?.roles?.includes('senior_advocate')) {
+    if (user?.roles?.includes('super_admin') || user?.roles?.includes('firm_admin') || user?.roles?.includes('senior_advocate')) {
       items.push({
         key: '/reports/analytics',
         icon: <BarChartOutlined />,

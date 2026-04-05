@@ -4,6 +4,76 @@ This document describes the key user workflows in the LegalOps platform, organiz
 
 ---
 
+## 0. Tenant Onboarding (Self-Service Registration)
+
+This is the first interaction a new law firm has with the platform.
+
+### Registration Flow
+
+```
+New Law Firm visits /register
+        |
+        v
+[Anyone] Fills Registration Form
+        |   - Firm Name (e.g. "Sharma & Associates")
+        |   - Firm Code (unique, e.g. "SHARMA")
+        |   - Admin First/Last Name
+        |   - Admin Email
+        |   - Contact Phone (optional)
+        |   - Office Address (optional)
+        |
+        v
+[System] Creates Tenant
+        |   - New tenant row in database
+        |   - Slug auto-generated from firm code
+        |   - Subscription tier: standard
+        |
+        v
+[System] Creates Keycloak User
+        |   - Username = admin email
+        |   - Role = firm_admin
+        |   - tenant_id attribute = new tenant UUID
+        |   - Temporary password generated
+        |   - Password marked as "must change on first login"
+        |
+        v
+[System] Sends Welcome Email
+        |   - Login URL with firm code: /welcome?code=SHARMA
+        |   - Email address
+        |   - Temporary password
+        |   - Firm code
+        |   - Getting started instructions
+        |
+        v
+[Admin] Receives Email → Clicks Login URL
+        |
+        v
+[Admin] Signs in → Changes Password
+        |
+        v
+[Admin] Sees branded dashboard with firm name/logo
+        |
+        v
+[Admin] Configures firm:
+        ├── Tenant Settings → Upload logo, set colors
+        ├── Bank Clients → Add banks they serve
+        ├── Users → Invite team (advocates, paralegals)
+        └── Ready to process opinion requests!
+```
+
+### Post-Registration First Login Experience
+
+1. Admin clicks the login URL from the welcome email (e.g. `https://app.legalops.com/welcome?code=SHARMA`)
+2. Login page shows the firm name (from public tenant config API)
+3. Admin signs in with email + temporary password
+4. Keycloak prompts to change password (temporary password flow)
+5. After password change, redirected to Dashboard
+6. Firm name appears in the sidebar
+7. Admin can immediately go to Tenant Settings to upload logo and configure branding
+8. On next login, the login page will show the firm's logo and brand colors
+
+---
+
 ## 1. End-to-End Opinion Request Workflow
 
 This is the primary workflow that involves all user roles.

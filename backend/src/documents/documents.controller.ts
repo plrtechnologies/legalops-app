@@ -31,7 +31,7 @@ export class DocumentsController {
 
   @Post()
   @ApiConsumes('multipart/form-data')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE, UserRole.PARALEGAL)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE, UserRole.PARALEGAL)
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
   upload(
     @Req() req: ExpressRequest,
@@ -51,21 +51,21 @@ export class DocumentsController {
   }
 
   @Get()
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE, UserRole.PARALEGAL)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE, UserRole.PARALEGAL)
   findAll(@Request() req: ExpressRequest, @Param('opinionRequestId') opinionRequestId: string) {
     const user = req.user as User;
     return this.service.findByOpinionRequestId(user.tenantId, opinionRequestId);
   }
 
   @Get(':id/signed-url')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE, UserRole.PARALEGAL)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE, UserRole.PARALEGAL)
   getSignedUrl(@Request() req: ExpressRequest, @Param('id') id: string) {
     const user = req.user as User;
     return this.service.getSignedUrl(user.tenantId, id);
   }
 
   @Delete(':id')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   remove(@Req() req: ExpressRequest, @Param('id') id: string) {
     const user = req.user as User;
     return this.service.remove(user.tenantId, id, this.audit(req, user));

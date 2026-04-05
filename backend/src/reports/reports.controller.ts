@@ -31,6 +31,7 @@ export class ReportsController {
 
   @Get('audit-logs')
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -52,7 +53,7 @@ export class ReportsController {
   }
 
   @Get('tat')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   async getTat(
     @CurrentUser() user: User,
     @Query('from') from?: string,
@@ -68,13 +69,13 @@ export class ReportsController {
   }
 
   @Get('workload')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   async getWorkload(@CurrentUser() user: User) {
     return this.reportsService.getWorkloadReport(user.tenantId);
   }
 
   @Get('compliance')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   async getCompliance(
     @CurrentUser() user: User,
     @Query('from') from?: string,

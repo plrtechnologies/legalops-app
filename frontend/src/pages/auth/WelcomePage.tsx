@@ -99,6 +99,12 @@ export default function WelcomePage() {
               Sign in with Keycloak
             </Button>
           </div>
+          <div style={{ marginTop: 16 }}>
+            <Text type="secondary">New law firm? </Text>
+            <Button type="link" onClick={() => navigate('/register')} style={{ padding: 0 }}>
+              Register your firm
+            </Button>
+          </div>
         </>
       )}
     </Card>

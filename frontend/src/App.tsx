@@ -16,6 +16,7 @@ import OpinionTemplatesPage from './pages/admin/OpinionTemplatesPage';
 import AuditLogsReportPage from './pages/reports/AuditLogsReportPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import WelcomePage from './pages/auth/WelcomePage';
+import RegisterPage from './pages/auth/RegisterPage';
 import { AUDIT_REPORT_ROLES, TENANT_BRANDING_ROLES } from './lib/tenant-roles';
 
 function ThemedApp({ children }: { children: React.ReactNode }) {
@@ -87,7 +88,7 @@ function ProtectedRoute({
 }
 
 const TENANT_ADMIN_ROLES = [...TENANT_BRANDING_ROLES];
-const FIRM_ADMIN_ROLES = ['firm_admin'];
+const FIRM_ADMIN_ROLES = ['super_admin', 'firm_admin'];
 
 export default function App() {
   return (
@@ -95,6 +96,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route
             path="/"
             element={
@@ -115,7 +117,7 @@ export default function App() {
             <Route
               path="opinion-requests"
               element={
-                <ProtectedRoute requiredRoles={['firm_admin', 'senior_advocate', 'panel_advocate', 'paralegal']}>
+                <ProtectedRoute requiredRoles={['super_admin', 'firm_admin', 'senior_advocate', 'panel_advocate', 'paralegal']}>
                   <OpinionRequestsListPage />
                 </ProtectedRoute>
               }
@@ -123,7 +125,7 @@ export default function App() {
             <Route
               path="opinion-requests/:id"
               element={
-                <ProtectedRoute requiredRoles={['firm_admin', 'senior_advocate', 'panel_advocate', 'paralegal']}>
+                <ProtectedRoute requiredRoles={['super_admin', 'firm_admin', 'senior_advocate', 'panel_advocate', 'paralegal']}>
                   <OpinionRequestDetailPage />
                 </ProtectedRoute>
               }
@@ -131,7 +133,7 @@ export default function App() {
             <Route
               path="opinion-requests/:opinionRequestId/opinions/:opinionId"
               element={
-                <ProtectedRoute requiredRoles={['firm_admin', 'senior_advocate', 'panel_advocate']}>
+                <ProtectedRoute requiredRoles={['super_admin', 'firm_admin', 'senior_advocate', 'panel_advocate']}>
                   <OpinionsPage />
                 </ProtectedRoute>
               }
@@ -187,7 +189,7 @@ export default function App() {
             <Route
               path="reports/analytics"
               element={
-                <ProtectedRoute requiredRoles={['firm_admin', 'senior_advocate']}>
+                <ProtectedRoute requiredRoles={['super_admin', 'firm_admin', 'senior_advocate']}>
                   <ReportsPage />
                 </ProtectedRoute>
               }

@@ -70,7 +70,7 @@ A **multi-tenant SaaS platform** for law firms in India that serve as panel advo
 
 | Role | Opinion Requests | Documents | Opinions | Admin |
 |---|---|---|---|---|
-| **Super Admin** | - | - | - | Manage tenants |
+| **Super Admin** | All actions | All actions | All actions | Full platform access: tenants, users, settings, all features |
 | **Firm Admin** | Create, assign, delete | Upload, delete | All actions, issue | Users, settings, bank clients |
 | **Senior Advocate** | Create, assign | Upload | Draft, review, approve, issue | - |
 | **Panel Advocate** | Create | Upload | Draft, submit | - |
@@ -118,6 +118,7 @@ Output fields: Summary Findings, Title Chain Analysis, Encumbrance Analysis, Ris
 | OpenAI | `openai` | `gpt-4`, `gpt-4-turbo` |
 | Anthropic | `anthropic` | `claude-sonnet-4-20250514`, `claude-opus-4-0-20250514` |
 | Google | `google` | `gemini-pro`, `gemini-1.5-pro` |
+| Sarvam AI | `sarvam` | Sarvam AI chat models |
 
 Set via `LLM_PROVIDER` and `LLM_MODEL` environment variables.
 
@@ -131,6 +132,7 @@ Detailed user workflows with screenshots are documented in **[docs/workflows.md]
 
 | # | Workflow | Screenshot |
 |---|---|---|
+| 0 | [Tenant Onboarding (Self-Service)](docs/workflows.md#0-tenant-onboarding-self-service-registration) | Public `/register` page |
 | 1 | [Login & Tenant Branding](docs/workflows.md#2-login--tenant-branding-workflow) | ![Login](docs/images/01-login.png) |
 | 2 | [Dashboard](docs/workflows.md#3-dashboard-workflow) | ![Dashboard](docs/images/02-dashboard.png) |
 | 3 | [Opinion Request Management](docs/workflows.md#4-opinion-request-management) | ![Requests](docs/images/03-opinion-requests.png) |
@@ -309,6 +311,7 @@ legalops-app/
 | Method | Path | Purpose |
 |---|---|---|
 | `GET` | `/api/v1/public/tenants/config?code=X` | Tenant branding for login page |
+| `POST` | `/api/v1/public/register` | Self-service tenant registration |
 
 ---
 
@@ -366,6 +369,8 @@ Uses: S3 (IRSA), RDS, ElastiCache, ALB Ingress, ACM certificates.
 | `REDIS_HOST` | `localhost` | Redis host |
 | `KEYCLOAK_URL` | `http://localhost:8080/auth` | Keycloak base URL |
 | `KEYCLOAK_REALM` | `legal-opinion-saas` | Keycloak realm |
+| `KEYCLOAK_ADMIN_USER` | `admin` | Keycloak admin username (for onboarding) |
+| `KEYCLOAK_ADMIN_PASSWORD` | - | Keycloak admin password (for onboarding) |
 | `STORAGE_DRIVER` | `local` | `local` / `nfs` / `s3` |
 | `LLM_PROVIDER` | `openai` | `openai` / `anthropic` / `google` |
 | `LLM_API_KEY` | - | API key for LLM provider |
@@ -403,8 +408,15 @@ The realm import at `deployment/keycloak/legal-opinion-saas-realm.json` includes
 - Role: `firm_admin`
 - Tenant: `11111111-1111-1111-1111-111111111111` (Demo Law Firm)
 
-### Adding a New Firm (Production)
+### Adding a New Firm
 
+**Self-Service (Recommended):**
+1. Navigate to `/register` on the platform
+2. Fill in firm details (name, code, admin email)
+3. System automatically creates tenant + Keycloak user + sends credentials email
+4. Firm admin logs in, changes password, and configures branding
+
+**Manual (Super Admin):**
 1. Create a `tenants` row via super_admin API
 2. Create Keycloak users with the tenant's UUID as their `tenant_id` attribute
 3. Assign appropriate realm roles (`firm_admin`, `senior_advocate`, etc.)

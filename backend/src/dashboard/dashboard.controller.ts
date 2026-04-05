@@ -16,6 +16,7 @@ export class DashboardController {
 
   @Get('stats')
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,

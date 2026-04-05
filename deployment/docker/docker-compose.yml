@@ -68,6 +68,8 @@ services:
       KEYCLOAK_URL: http://keycloak:8080/auth
       KEYCLOAK_REALM: legal-opinion-saas
       KEYCLOAK_CLIENT_ID: legal-opinion-api
+      KEYCLOAK_ADMIN_USER: admin
+      KEYCLOAK_ADMIN_PASSWORD: Keycloak@1234
     ports:
       - '3000:3000'
     volumes:

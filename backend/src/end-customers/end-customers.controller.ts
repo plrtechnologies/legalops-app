@@ -15,13 +15,14 @@ export class EndCustomersController {
   constructor(private readonly service: EndCustomersService) {}
 
   @Post()
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PARALEGAL)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PARALEGAL)
   create(@CurrentUser() user: User, @Body() dto: CreateEndCustomerDto) {
     return this.service.create(user.tenantId, dto);
   }
 
   @Get()
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -36,6 +37,7 @@ export class EndCustomersController {
 
   @Get(':id')
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -46,13 +48,13 @@ export class EndCustomersController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PARALEGAL)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE, UserRole.PARALEGAL)
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateEndCustomerDto) {
     return this.service.update(user.tenantId, id, dto);
   }
 
   @Delete(':id')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.service.remove(user.tenantId, id);
   }

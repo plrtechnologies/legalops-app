@@ -15,13 +15,14 @@ export class BankClientsController {
   constructor(private readonly service: BankClientsService) {}
 
   @Post()
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   create(@CurrentUser() user: User, @Body() dto: CreateBankClientDto) {
     return this.service.create(user.tenantId, dto);
   }
 
   @Get()
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -33,6 +34,7 @@ export class BankClientsController {
 
   @Get(':id')
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -43,13 +45,13 @@ export class BankClientsController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateBankClientDto) {
     return this.service.update(user.tenantId, id, dto);
   }
 
   @Delete(':id')
-  @Roles(UserRole.FIRM_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN)
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.service.remove(user.tenantId, id);
   }

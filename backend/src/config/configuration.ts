@@ -24,7 +24,11 @@ export default () => ({
     get issuer() {
       return `${process.env.KEYCLOAK_URL ?? 'http://localhost:8080/auth'}/realms/${process.env.KEYCLOAK_REALM ?? 'legal-opinion-saas'}`;
     },
+    adminUser: process.env.KEYCLOAK_ADMIN_USER ?? 'admin',
+    adminPassword: process.env.KEYCLOAK_ADMIN_PASSWORD ?? '',
+    adminSecret: process.env.KEYCLOAK_ADMIN_CLIENT_SECRET ?? '',
   },
+  cors: process.env.CORS_ORIGIN ?? 'http://localhost',
   storage: {
     driver: (process.env.STORAGE_DRIVER ?? 'local') as 'nfs' | 's3' | 'local',
     nfsPath: process.env.NFS_STORAGE_PATH ?? process.env.LOCAL_STORAGE_PATH ?? '/mnt/documents',
@@ -43,7 +47,7 @@ export default () => ({
     ocrConfidenceThreshold: parseFloat(process.env.SARVAM_OCR_CONFIDENCE_THRESHOLD ?? '0.7'),
   },
   llm: {
-    provider: (process.env.LLM_PROVIDER ?? 'openai') as 'openai' | 'anthropic' | 'google',
+    provider: (process.env.LLM_PROVIDER ?? 'openai') as 'openai' | 'anthropic' | 'google' | 'sarvam',
     apiKey: process.env.LLM_API_KEY ?? '',
     model: process.env.LLM_MODEL ?? 'gpt-4',
     maxTokens: parseInt(process.env.LLM_MAX_TOKENS ?? '4096', 10),

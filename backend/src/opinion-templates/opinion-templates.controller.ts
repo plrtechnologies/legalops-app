@@ -19,13 +19,14 @@ export class OpinionTemplatesController {
   constructor(private readonly service: OpinionTemplatesService) {}
 
   @Post()
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   create(@CurrentUser() user: User, @Body() dto: CreateOpinionTemplateDto) {
     return this.service.create(user.tenantId, dto);
   }
 
   @Get()
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -38,6 +39,7 @@ export class OpinionTemplatesController {
 
   @Get(':id')
   @Roles(
+    UserRole.SUPER_ADMIN,
     UserRole.FIRM_ADMIN,
     UserRole.SENIOR_ADVOCATE,
     UserRole.PANEL_ADVOCATE,
@@ -48,13 +50,13 @@ export class OpinionTemplatesController {
   }
 
   @Patch(':id')
-  @Roles(UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN, UserRole.SENIOR_ADVOCATE)
   update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateOpinionTemplateDto) {
     return this.service.update(user.tenantId, id, dto);
   }
 
   @Delete(':id')
-  @Roles(UserRole.FIRM_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN)
   remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.service.remove(user.tenantId, id);
   }
