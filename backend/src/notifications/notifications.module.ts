@@ -8,6 +8,6 @@ import { EmailService } from './email/email.service';
 @Module({
   imports: [TypeOrmModule.forFeature([OpinionRequest, Tenant])],
   providers: [NotificationsService, EmailService],
-  exports: [NotificationsService],
+  exports: [NotificationsService, EmailService],
 })
 export class NotificationsModule {}

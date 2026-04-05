@@ -30,7 +30,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     @InjectRepository(Tenant) private readonly tenantRepo: Repository<Tenant>,
   ) {
     const issuer = config.get<string>('keycloak.issuer');
-    const audience = config.get<string>('keycloak.clientId');
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -42,7 +41,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         jwksUri: config.get<string>('keycloak.jwksUri')!,
       }),
       ...(issuer ? { issuer } : {}),
-      ...(audience ? { audience } : {}),
+      // No audience validation — SPA tokens (legal-opinion-web) don't include the API audience
     });
   }
 

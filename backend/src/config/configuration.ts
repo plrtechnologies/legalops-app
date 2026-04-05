@@ -22,7 +22,9 @@ export default () => ({
       return `${process.env.KEYCLOAK_URL ?? 'http://localhost:8080/auth'}/realms/${process.env.KEYCLOAK_REALM ?? 'legal-opinion-saas'}/protocol/openid-connect/certs`;
     },
     get issuer() {
-      return `${process.env.KEYCLOAK_URL ?? 'http://localhost:8080/auth'}/realms/${process.env.KEYCLOAK_REALM ?? 'legal-opinion-saas'}`;
+      // Use external URL for issuer validation (tokens are issued with the browser-facing URL)
+      const externalUrl = process.env.KEYCLOAK_EXTERNAL_URL ?? process.env.KEYCLOAK_URL ?? 'http://localhost/auth';
+      return `${externalUrl}/realms/${process.env.KEYCLOAK_REALM ?? 'legal-opinion-saas'}`;
     },
     adminUser: process.env.KEYCLOAK_ADMIN_USER ?? 'admin',
     adminPassword: process.env.KEYCLOAK_ADMIN_PASSWORD ?? '',

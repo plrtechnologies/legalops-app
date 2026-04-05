@@ -3,6 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ARG VITE_DEFAULT_TENANT_CODE=demo-firm
+ENV VITE_DEFAULT_TENANT_CODE=$VITE_DEFAULT_TENANT_CODE
 RUN npm run build
 
 FROM nginx:alpine
