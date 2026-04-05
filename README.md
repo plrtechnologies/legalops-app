@@ -1,100 +1,417 @@
-# LegalOps App
+# LegalOps - Legal Opinion SaaS Platform
 
-Implementation workspace for the **Legal Opinion SaaS** described in the product HLD:
+A **multi-tenant SaaS platform** for law firms in India that serve as panel advocates for banks. The platform digitizes the legal opinion workflow — from document submission and AI-powered extraction to opinion generation, review, and issuance.
 
-- [HLD-Legal-Opinion-SaaS.md](../saas-ideas/HLD-Legal-Opinion-SaaS.md) (authoritative product / architecture spec)
+## Key Capabilities
 
-This repo is an **MVP-aligned build**: multi-tenant auth, **opinion requests** (bank client + end customer + templates), documents and opinions workflow, **audit logging**, **tenant branding**, public firm config for sign-in, storage, and deployment assets. Larger HLD items (full LLM stack, notifications, analytics dashboards, RLS, CI/CD) are still out of scope here (see [Disconnects from HLD](#disconnects-from-hld)).
+- **Multi-Tenant Architecture** — Each law firm is an isolated tenant with its own branding, users, and data
+- **AI/LLM-Powered** — Pluggable LLM providers (OpenAI GPT-4, Anthropic Claude, Google Gemini) for draft opinion generation and document translation
+- **Multilingual Document Processing** — OCR + automatic language detection + translation for 11 Indian regional languages
+- **Configurable Opinion Workflow** — Draft → Review → Approve → Issue with role-based access control
+- **Bank-Specific Templates** — Each bank client has its own opinion format template
+- **Email Notifications** — Configurable per-bank notifications to bank clients and end customers
+- **Audit Trail** — Full compliance logging of all actions with old/new value tracking
 
-## Repository layout
+---
+
+## Architecture Overview
+
+![Three-Tier Architecture](docs/images/arch-01-three-tier.png)
+
+### Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | React 18 + TypeScript + Vite | Single Page Application |
+| **UI Library** | Ant Design 5 | Component library |
+| **State** | Zustand + TanStack React Query | Client & server state |
+| **Backend** | NestJS 10 + TypeScript | REST API, business logic |
+| **ORM** | TypeORM | Database abstraction |
+| **Database** | PostgreSQL 16 | Relational data with tenant isolation |
+| **Cache** | Redis 7 | Session and API caching |
+| **Auth** | Keycloak 24 | SSO, RBAC, JWT (PKCE + JWKS) |
+| **AI/LLM** | OpenAI / Anthropic / Google | Opinion generation, translation |
+| **OCR** | Tesseract + Sarvam AI | Document text extraction |
+| **Email** | Nodemailer (SMTP / SES) | Notifications |
+| **Storage** | Local / NFS / Amazon S3 | Document storage (pluggable) |
+| **Containers** | Docker + Docker Compose | Local development |
+| **Orchestration** | Kubernetes (k3s / EKS) | Production deployment |
+
+---
+
+## Multi-Tenancy Model
+
+![Multi-Tenancy Architecture](docs/images/arch-02-multi-tenancy.png)
+
+| Concept | Entity | Description |
+|---|---|---|
+| **Tenant** | Law Firm | e.g. "Sharma & Associates" — has own branding, users, data |
+| **Client** | Bank | e.g. "HDFC Bank" — served by the law firm tenant |
+| **End Customer** | Borrower | Loan applicant referred by the bank to the law firm |
+
+- **Shared database, shared schema** with `tenant_id` column on all tables
+- **Single Keycloak realm** — one pair of clients for all firms
+- JWT `tenant_id` claim provides tenant isolation at the API layer
+
+---
+
+## Authentication & RBAC
+
+![Authentication Flow](docs/images/arch-05-auth-flow.png)
+
+### Keycloak Integration
+- **Realm**: `legal-opinion-saas`
+- **SPA Client**: `legal-opinion-web` (public, PKCE S256)
+- **API Client**: `legal-opinion-api` (bearer-only)
+- **Tenant Mapping**: User attribute `tenant_id` → JWT claim via protocol mapper
+- **Identity Brokering**: Supports SSO with firm's IdP (Azure AD, Okta, etc.)
+
+### Roles & Permissions
+
+| Role | Opinion Requests | Documents | Opinions | Admin |
+|---|---|---|---|---|
+| **Super Admin** | - | - | - | Manage tenants |
+| **Firm Admin** | Create, assign, delete | Upload, delete | All actions, issue | Users, settings, bank clients |
+| **Senior Advocate** | Create, assign | Upload | Draft, review, approve, issue | - |
+| **Panel Advocate** | Create | Upload | Draft, submit | - |
+| **Paralegal** | Create | Upload | View only | - |
+| **Branding Manager** | - | - | - | Branding only |
+
+---
+
+## AI / LLM Integration
+
+![LLM Integration Architecture](docs/images/arch-03-llm-integration.png)
+
+### Document Processing Pipeline
+
+```
+Upload → OCR (Tesseract) → Language Detection (LLM)
+                                    |
+                    [English] ------+------ [Regional Language]
+                        |                        |
+                        v                        v
+                   Sarvam AI              LLM Translation → English
+                   Extraction                    |
+                        |                        v
+                        v                   Sarvam AI Extraction
+                   Persist Data                  |
+                        |                        v
+                        +-------> Persist Data (original + translated + extracted)
+```
+
+**Supported Regional Languages**: Hindi, Tamil, Telugu, Kannada, Malayalam, Marathi, Gujarati, Bengali, Odia, Punjabi, Assamese
+
+### Opinion Generation
+
+The AI generates structured draft opinions by combining:
+1. **Extracted document data** (property details, parties, dates, amounts)
+2. **Bank-specific opinion template** (configured per bank client)
+3. **Loan and property context** (type, amount, location)
+
+Output fields: Summary Findings, Title Chain Analysis, Encumbrance Analysis, Risk Observations, Final Opinion, Recommendation (Positive/Negative/Conditional), Conditions.
+
+### Pluggable LLM Providers
+
+| Provider | Config Value | Model Examples |
+|---|---|---|
+| OpenAI | `openai` | `gpt-4`, `gpt-4-turbo` |
+| Anthropic | `anthropic` | `claude-sonnet-4-20250514`, `claude-opus-4-0-20250514` |
+| Google | `google` | `gemini-pro`, `gemini-1.5-pro` |
+
+Set via `LLM_PROVIDER` and `LLM_MODEL` environment variables.
+
+---
+
+## User Workflows
+
+Detailed user workflows with screenshots are documented in **[docs/workflows.md](docs/workflows.md)**.
+
+### Quick Overview
+
+| # | Workflow | Screenshot |
+|---|---|---|
+| 1 | [Login & Tenant Branding](docs/workflows.md#2-login--tenant-branding-workflow) | ![Login](docs/images/01-login.png) |
+| 2 | [Dashboard](docs/workflows.md#3-dashboard-workflow) | ![Dashboard](docs/images/02-dashboard.png) |
+| 3 | [Opinion Request Management](docs/workflows.md#4-opinion-request-management) | ![Requests](docs/images/03-opinion-requests.png) |
+| 4 | [Request Detail & Documents](docs/workflows.md#4b-opinion-request-detail) | ![Detail](docs/images/04-opinion-request-detail.png) |
+| 5 | [Document Upload & Processing](docs/workflows.md#5-document-management-workflow) | ![Upload](docs/images/05-document-upload.png) |
+| 6 | [Document Viewer](docs/workflows.md#5b-document-viewer) | ![Viewer](docs/images/06-document-viewer.png) |
+| 7 | [Opinion Editor & AI Draft](docs/workflows.md#6-opinion-drafting--ai-generation-workflow) | ![Editor](docs/images/07-opinion-editor.png) |
+| 8 | [User Management](docs/workflows.md#7-user-management-workflow-firm-admin) | ![Users](docs/images/08-user-management.png) |
+| 9 | [Tenant Settings & AI Config](docs/workflows.md#9-tenant-settings--ai-configuration) | ![Settings](docs/images/09-tenant-settings.png) |
+| 10 | [Reports & Analytics](docs/workflows.md#10-reports--analytics) | ![Reports](docs/images/10-reports.png) |
+
+### Core Workflow: Opinion Request Lifecycle
+
+```
+Borrower → Bank referral → Law Firm
+    |
+    v
+[Paralegal] Create Request → Upload Documents
+    |
+    v
+[System] OCR → Detect Language → Translate → Extract Data
+    |
+    v
+[Advocate] Generate AI Draft → Review & Edit → Submit
+    |
+    v
+[Senior Advocate] Review → Approve (or Request Changes)
+    |
+    v
+[Firm Admin] Issue Final Opinion
+    |
+    v
+[System] Notify Bank + End Customer (configurable)
+```
+
+---
+
+## Data Model
+
+### Entity Relationship
+
+```
+Tenant (Law Firm)
+  ├── Users
+  ├── BankClients
+  │     ├── EndCustomers (Borrowers)
+  │     └── OpinionTemplates
+  ├── OpinionRequests
+  │     ├── Documents
+  │     └── Opinions
+  └── AuditLogs
+```
+
+### Key Entities
+
+| Entity | Key Fields |
+|---|---|
+| **Tenant** | code, slug, name, branding (logo, colors), settings (AI config), subscription |
+| **User** | keycloakId, email, role, tenantId |
+| **BankClient** | code, name, branch, notification settings, default template |
+| **EndCustomer** | name, email, PAN, Aadhaar, linked to bank client |
+| **OpinionTemplate** | name, templateContent (JSON), loanType, per bank client |
+| **OpinionRequest** | referenceNumber, loanType, amount, property, status, assigned lawyer |
+| **Document** | filename, storagePath, documentType, OCR data, translation data, extracted data |
+| **Opinion** | sections (summary, title chain, encumbrance, risk, final), recommendation, conditions, AI generated flag |
+| **AuditLog** | entityType, entityId, action, oldValues, newValues, userId, ipAddress |
+
+---
+
+## Repository Structure
 
 ```
 legalops-app/
-├── backend/                 # NestJS API (TypeORM, PostgreSQL, Redis)
-├── frontend/                # React + TypeScript SPA (Ant Design, keycloak-js)
+├── backend/                          # NestJS REST API
+│   └── src/
+│       ├── ai/                       # AI/LLM module (providers, prompts, translation)
+│       ├── audit-logs/               # Audit logging service
+│       ├── auth/                     # Keycloak JWT auth, RBAC guards
+│       ├── bank-clients/             # Bank client CRUD
+│       ├── config/                   # App configuration
+│       ├── dashboard/                # Dashboard stats endpoint
+│       ├── database/                 # TypeORM setup, dev seed
+│       ├── document-pipeline/        # OCR → Translation → Extraction pipeline
+│       ├── documents/                # Document upload & management
+│       ├── end-customers/            # End customer CRUD
+│       ├── notifications/            # Email notification engine
+│       ├── opinion-requests/         # Opinion request lifecycle
+│       ├── opinion-templates/        # Bank-specific templates
+│       ├── opinions/                 # Opinion drafting & review workflow
+│       ├── reports/                  # TAT, workload, compliance reports
+│       ├── storage/                  # Pluggable storage (local/NFS/S3)
+│       ├── tenancy/                  # Multi-tenant middleware
+│       ├── tenants/                  # Tenant management & branding
+│       └── users/                    # User CRUD
+├── frontend/                         # React SPA
+│   └── src/
+│       ├── auth/                     # Keycloak client config
+│       ├── components/               # Layout, DocumentViewer
+│       ├── lib/                      # Role helpers
+│       ├── pages/
+│       │   ├── admin/                # Users, Bank Clients, Templates, Settings
+│       │   ├── auth/                 # Welcome/Login
+│       │   ├── dashboard/            # Dashboard with stat widgets
+│       │   ├── opinion-requests/     # List + Detail pages
+│       │   ├── opinions/             # Opinion editor with AI draft
+│       │   └── reports/              # Audit logs, TAT, workload, compliance
+│       ├── services/                 # Axios API client
+│       └── store/                    # Zustand stores (auth, branding)
 ├── deployment/
-│   ├── docker/              # Local e2e: docker-compose + Postgres init seed
-│   ├── keycloak/            # Realm JSON import (clients, roles, demo user)
+│   ├── docker/                       # Docker Compose + init scripts
+│   ├── keycloak/                     # Realm JSON (roles, clients, demo user)
 │   └── k8s/
-│       ├── local/           # Plain YAML for local cluster (no Kustomize)
-│       └── eks/             # Plain YAML for EKS-style prod
-└── docs/                    # Runbooks, env matrix, architecture notes
+│       ├── local/                    # K8s manifests for local k3s
+│       └── eks/                      # K8s manifests for AWS EKS
+└── docs/
+    ├── images/                       # Architecture diagrams & UI mockups
+    ├── workflows.md                  # Detailed user workflow documentation
+    ├── architecture.md               # Architecture notes
+    ├── env-matrix.md                 # Environment variable reference
+    └── local-runbook.md              # Local K8s deployment guide
 ```
 
-## What matches the HLD today
+---
 
-| HLD topic | In this repo |
-|-----------|----------------|
-| **Multi-tenancy** | `tenant_id` on domain rows; users scoped per tenant |
-| **Domain model (core)** | `bank_clients`, `end_customers`, `opinion_templates`, `opinion_requests`, `documents`, `opinions`, `audit_logs` (TypeORM entities + REST API) |
-| **Keycloak** | Realm `legal-opinion-saas`, clients `legal-opinion-web` (SPA) + `legal-opinion-api` (bearer). Web client **redirect URIs** include `http://localhost`, **`http://localhost:5173`** (Vite), `127.0.0.1` variants, and `legalops.local` (see `deployment/keycloak/legal-opinion-saas-realm.json`) |
-| **JWT** | Same token for UI + API; validated via **JWKS** (not `@nestjs/keycloak-connect`, but equivalent) |
-| **RBAC** | Realm roles: `firm_admin`, `senior_advocate`, `panel_advocate`, `paralegal`, `super_admin`, `tenant_branding_manager` |
-| **Tenant in token** | User attribute `tenant_id` → claim `tenant_id` (protocol mapper on web client) |
-| **Frontend** | `keycloak-js` + PKCE; **welcome** route for branded sign-in (`/welcome?code=…`), then Keycloak with **post-login `redirectUri`** back to the requested app path |
-| **Tenant branding** | Authenticated **tenant** settings + branding API; **public** `GET /api/v1/public/tenants/config?code=` or `slug=` (no auth) for login/embed branding |
-| **Audit** | Mutable actions recorded on opinion requests, documents, opinions, tenant settings/branding, document pipeline; **reports** `GET /api/v1/reports/audit-logs` + **Audit log** UI |
-| **Storage** | Pluggable: `local` / `nfs` / `s3` via env |
-| **Document AI** | Hybrid pipeline **stub**: OCR service + Sarvam client (HLD also lists GPT/Textract/translation; see disconnects) |
+## API Endpoints
 
-## Keycloak model (one realm, many firms)
+### Opinion Requests
+| Method | Path | Roles |
+|---|---|---|
+| `POST` | `/api/v1/opinion-requests` | firm_admin, senior_advocate, paralegal |
+| `GET` | `/api/v1/opinion-requests` | All authenticated |
+| `GET` | `/api/v1/opinion-requests/:id` | All authenticated |
+| `PATCH` | `/api/v1/opinion-requests/:id/status` | firm_admin, senior_advocate |
+| `PATCH` | `/api/v1/opinion-requests/:id/assign` | firm_admin, senior_advocate |
+| `DELETE` | `/api/v1/opinion-requests/:id` | firm_admin, senior_advocate |
 
-- **One** realm and **one** pair of clients for the whole platform.
-- **New law firm** = new row in `tenants` + new Keycloak users with the same realm roles and a **`tenant_id` user attribute** matching that tenant’s UUID.
-- **No** per-firm Keycloak clients or realms required for normal scale.
+### Documents
+| Method | Path | Roles |
+|---|---|---|
+| `POST` | `/api/v1/opinion-requests/:id/documents` | All authenticated |
+| `GET` | `/api/v1/opinion-requests/:id/documents` | All authenticated |
+| `GET` | `/api/v1/opinion-requests/:id/documents/:docId/signed-url` | All authenticated |
+| `DELETE` | `/api/v1/opinion-requests/:id/documents/:docId` | firm_admin, senior_advocate |
 
-## Local e2e (Docker Compose)
+### Opinions
+| Method | Path | Roles |
+|---|---|---|
+| `POST` | `/api/v1/opinion-requests/:id/opinions` | advocate, senior_advocate, firm_admin |
+| `GET` | `/api/v1/opinion-requests/:id/opinions` | All authenticated |
+| `PATCH` | `/api/v1/opinion-requests/:id/opinions/:oid` | advocate, senior_advocate, firm_admin |
+| `POST` | `/api/v1/opinion-requests/:id/opinions/:oid/generate-draft` | advocate, senior_advocate, firm_admin |
+| `PATCH` | `/api/v1/opinion-requests/:id/opinions/:oid/submit` | advocate, senior_advocate |
+| `PATCH` | `/api/v1/opinion-requests/:id/opinions/:oid/approve` | senior_advocate, firm_admin |
+| `PATCH` | `/api/v1/opinion-requests/:id/opinions/:oid/issue` | senior_advocate, firm_admin |
+| `POST` | `/api/v1/opinion-requests/:id/opinions/:oid/comments` | senior_advocate, firm_admin |
 
-From `deployment/docker/`:
+### Admin
+| Method | Path | Roles |
+|---|---|---|
+| `GET/POST/PATCH/DELETE` | `/api/v1/bank-clients[/:id]` | firm_admin (write), all (read) |
+| `GET/POST/PATCH/DELETE` | `/api/v1/end-customers[/:id]` | firm_admin (write), all (read) |
+| `GET/POST/PATCH/DELETE` | `/api/v1/opinion-templates[/:id]` | firm_admin (write), all (read) |
+| `GET/POST/PATCH` | `/api/v1/users[/:id]` | firm_admin |
+| `GET/POST/PATCH` | `/api/v1/tenants[/:id]` | super_admin |
+
+### Dashboard & Reports
+| Method | Path | Roles |
+|---|---|---|
+| `GET` | `/api/v1/dashboard/stats` | All authenticated |
+| `GET` | `/api/v1/reports/audit-logs` | All authenticated |
+| `GET` | `/api/v1/reports/tat` | firm_admin, senior_advocate |
+| `GET` | `/api/v1/reports/workload` | firm_admin, senior_advocate |
+| `GET` | `/api/v1/reports/compliance` | firm_admin, senior_advocate |
+
+### Public (No Auth)
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/api/v1/public/tenants/config?code=X` | Tenant branding for login page |
+
+---
+
+## Deployment
+
+### Deployment Architecture
+
+![Deployment Architecture](docs/images/arch-04-deployment.png)
+
+### Local Development (Docker Compose)
 
 ```bash
+cd deployment/docker
 cp .env.example .env
+# Edit .env: set LLM_API_KEY, SMTP_* if needed
 docker compose up --build
 ```
 
-- **App**: http://localhost (frontend proxies `/api` and `/auth`)
-- **API / Swagger**: http://localhost:3000/api/docs
-- **Keycloak admin**: http://localhost:8080/auth (admin / see compose for password)
+| Service | URL |
+|---|---|
+| Frontend | http://localhost |
+| Backend API / Swagger | http://localhost:3000/api/docs |
+| Keycloak Admin | http://localhost:8080/auth |
 
-Postgres runs `initdb/*.sql` on **first** volume init; demo tenant UUID is aligned with the realm import user. If you already created the DB volume once, use `docker compose down -v` before re-seeding.
+**Demo credentials**: `firmadmin` / `Legalops@123`
 
-**Vite-only dev** (`npm run dev` on port **5173**): ensure Keycloak **legal-opinion-web** valid redirect URIs include `http://localhost:5173/*` (already in the realm import JSON). Re-import realm or edit the client if your Keycloak volume was created before that change.
+### Kubernetes (Local k3s)
 
-## Kubernetes
+```bash
+kubectl apply -k deployment/k8s/local/
+```
 
-- **Local**: apply manifests under `deployment/k8s/local/` (uses your existing Postgres; NFS PV for docs).
-- **EKS**: manifests under `deployment/k8s/eks/` (S3 + RDS/Elastiache placeholders).
+See [docs/local-runbook.md](docs/local-runbook.md) for detailed instructions.
 
-See [docs/local-runbook.md](docs/local-runbook.md).
+### Kubernetes (AWS EKS)
+
+```bash
+kubectl apply -k deployment/k8s/eks/
+```
+
+Uses: S3 (IRSA), RDS, ElastiCache, ALB Ingress, ACM certificates.
+
+---
 
 ## Configuration
 
-- Backend / frontend examples: `backend/.env.example`, `frontend/.env.example`
-- Optional: `VITE_DEFAULT_TENANT_CODE` — firm `code` for `/welcome` branding when users open `/` without `?code=`
-- Full matrix: [docs/env-matrix.md](docs/env-matrix.md)
+### Backend Environment Variables
 
-## Disconnects from HLD
+| Variable | Default | Description |
+|---|---|---|
+| `DB_HOST` | `localhost` | PostgreSQL host |
+| `DB_NAME` | `legalops` | Database name |
+| `DB_USER` | `legalops` | Database user |
+| `DB_PASSWORD` | - | Database password |
+| `REDIS_HOST` | `localhost` | Redis host |
+| `KEYCLOAK_URL` | `http://localhost:8080/auth` | Keycloak base URL |
+| `KEYCLOAK_REALM` | `legal-opinion-saas` | Keycloak realm |
+| `STORAGE_DRIVER` | `local` | `local` / `nfs` / `s3` |
+| `LLM_PROVIDER` | `openai` | `openai` / `anthropic` / `google` |
+| `LLM_API_KEY` | - | API key for LLM provider |
+| `LLM_MODEL` | `gpt-4` | Model identifier |
+| `SMTP_HOST` | `localhost` | SMTP server for notifications |
+| `SMTP_FROM` | `noreply@legalops.local` | Sender email address |
+| `SARVAM_API_KEY` | - | Sarvam AI API key |
 
-Remaining **gaps or simplifications** vs [HLD-Legal-Opinion-SaaS.md](../saas-ideas/HLD-Legal-Opinion-SaaS.md):
+Full reference: [docs/env-matrix.md](docs/env-matrix.md)
 
-1. **AI / document intelligence** — HLD: pluggable LLM (GPT-4 / Claude / Gemini), Textract, regional translation. Repo: **Sarvam** integration + **stub OCR**; many endpoints are placeholders until wired to real providers.
+### Frontend Environment Variables
 
-2. **Opinion authoring** — Workflow (draft → review → issue) and section fields exist; **LLM-assisted opinion generation** from templates + extracted data (HLD §2.3 / §10) is not fully productized.
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | `` | Backend API URL |
+| `VITE_KEYCLOAK_URL` | `{window.origin}/auth` | Keycloak URL |
+| `VITE_KEYCLOAK_REALM` | `legal-opinion-saas` | Keycloak realm |
+| `VITE_KEYCLOAK_CLIENT_ID` | `legal-opinion-web` | Keycloak SPA client |
+| `VITE_DEFAULT_TENANT_CODE` | - | Default firm code for branding |
 
-3. **Master-data UI** — REST APIs exist for **bank clients**, **end customers**, and **opinion templates**, but there are **no dedicated admin list/CRUD screens**; templates and parties are mainly used from the **new opinion request** flow and seeds.
+---
 
-4. **Reporting & analytics** — **Audit log** report is implemented. HLD-style **metrics, TAT, compliance dashboards** are not.
+## Keycloak Setup
 
-5. **Notifications** — Email / in-app notification engine (HLD) is **not** implemented.
+### One Realm, Many Firms
 
-6. **Public config URL** — HLD examples use paths like `GET /tenants/config?code=…`. This repo exposes **`GET /api/v1/public/tenants/config`** (`code` or `slug` query params). Same idea; different path.
+- **Single realm** (`legal-opinion-saas`) for the entire platform
+- New law firm = new tenant row + Keycloak users with `tenant_id` attribute
+- No per-firm realms or clients needed
 
-7. **Tenant resolution** — **`JwtStrategy`** sets `tenantId` from the token for API use. **`TenantMiddleware`** still exists for header/subdomain-style hints; production should **rely on JWT tenant**, not client-controlled headers alone.
+### Demo User (Development)
 
-8. **Users** — HLD `keycloak_id` vs app PK: implementation uses **`keycloakId`** plus a generated **`id`** (aligned in spirit).
+The realm import at `deployment/keycloak/legal-opinion-saas-realm.json` includes:
+- User: `firmadmin` / `Legalops@123`
+- Role: `firm_admin`
+- Tenant: `11111111-1111-1111-1111-111111111111` (Demo Law Firm)
 
-9. **CI/CD** — HLD Section 13 pipelines are **not** in this repo.
+### Adding a New Firm (Production)
 
-10. **PostgreSQL RLS** — HLD-style tenant hardening via row-level security is **not** enabled; isolation is **application-level** (`tenant_id` filters).
+1. Create a `tenants` row via super_admin API
+2. Create Keycloak users with the tenant's UUID as their `tenant_id` attribute
+3. Assign appropriate realm roles (`firm_admin`, `senior_advocate`, etc.)
+4. Configure branding via the Tenant Settings page
 
-When extending the product, keep the HLD as the north star; prefer new features on **`opinion_requests`** and related entities rather than parallel ad hoc models.
+---
+
+## License
+
+Proprietary - PLR Technologies
