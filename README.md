@@ -6,7 +6,7 @@ A **multi-tenant SaaS platform** for law firms in India that serve as panel advo
 
 - **Multi-Tenant Architecture** — Each law firm is an isolated tenant with its own branding, users, and data
 - **AI/LLM-Powered** — Pluggable LLM providers (OpenAI GPT-4, Anthropic Claude, Google Gemini) for draft opinion generation and document translation
-- **Multilingual Document Processing** — OCR + automatic language detection + translation for 11 Indian regional languages
+- **Multilingual Document Processing** — Sarvam AI extraction + automatic language detection + translation for 11 Indian regional languages (OCR engine pluggable — Tesseract/Google Vision/Azure ready)
 - **Configurable Opinion Workflow** — Draft → Review → Approve → Issue with role-based access control
 - **Bank-Specific Templates** — Each bank client has its own opinion format template
 - **Email Notifications** — Configurable per-bank notifications to bank clients and end customers
@@ -31,7 +31,7 @@ A **multi-tenant SaaS platform** for law firms in India that serve as panel advo
 | **Cache** | Redis 7 | Session and API caching |
 | **Auth** | Keycloak 24 | SSO, RBAC, JWT (PKCE + JWKS) |
 | **AI/LLM** | OpenAI / Anthropic / Google | Opinion generation, translation |
-| **OCR** | Tesseract + Sarvam AI | Document text extraction |
+| **OCR** | Sarvam AI (Tesseract/Google Vision pluggable) | Document text extraction |
 | **Email** | Nodemailer (SMTP / SES) | Notifications |
 | **Storage** | Local / NFS / Amazon S3 | Document storage (pluggable) |
 | **Containers** | Docker + Docker Compose | Local development |
@@ -86,7 +86,7 @@ A **multi-tenant SaaS platform** for law firms in India that serve as panel advo
 ### Document Processing Pipeline
 
 ```
-Upload → OCR (Tesseract) → Language Detection (LLM)
+Upload → OCR (pluggable) → Language Detection (LLM)
                                     |
                     [English] ------+------ [Regional Language]
                         |                        |
@@ -218,7 +218,9 @@ legalops-app/
 │       ├── document-pipeline/        # OCR → Translation → Extraction pipeline
 │       ├── documents/                # Document upload & management
 │       ├── end-customers/            # End customer CRUD
+│       ├── common/                   # Shared utilities and filters
 │       ├── notifications/            # Email notification engine
+│       ├── onboarding/               # Self-service tenant registration
 │       ├── opinion-requests/         # Opinion request lifecycle
 │       ├── opinion-templates/        # Bank-specific templates
 │       ├── opinions/                 # Opinion drafting & review workflow
@@ -234,7 +236,7 @@ legalops-app/
 │       ├── lib/                      # Role helpers
 │       ├── pages/
 │       │   ├── admin/                # Users, Bank Clients, Templates, Settings
-│       │   ├── auth/                 # Welcome/Login
+│       │   ├── auth/                 # Welcome/Login, Register
 │       │   ├── dashboard/            # Dashboard with stat widgets
 │       │   ├── opinion-requests/     # List + Detail pages
 │       │   ├── opinions/             # Opinion editor with AI draft
@@ -336,7 +338,7 @@ docker compose up --build
 | Backend API / Swagger | http://localhost:3000/api/docs |
 | Keycloak Admin | http://localhost:8080/auth |
 
-**Demo credentials**: `firmadmin` / `Legalops@123`
+**Demo credentials** (login via browser at http://localhost/welcome): `firmadmin` / `Legalops@123`
 
 ### Kubernetes (Local k3s)
 
