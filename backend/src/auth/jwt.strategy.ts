@@ -49,20 +49,20 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!payload.sub) throw new UnauthorizedException('Invalid token subject');
     if (!payload.tenant_id) throw new UnauthorizedException('Missing tenant_id claim');
 
+    const tenant = await this.tenantRepo.findOne({
+      where: { id: payload.tenant_id, isActive: true },
+    });
+    if (!tenant) {
+      this.logger.warn(`Keycloak user ${payload.sub} has unknown tenant_id: ${payload.tenant_id}`);
+      throw new UnauthorizedException('Unknown tenant');
+    }
+
     let user = await this.userRepo.findOne({ where: { keycloakId: payload.sub } });
 
     const tokenRoles = payload.realm_access?.roles ?? [];
     const resolvedRole = this.resolveAppRole(tokenRoles);
 
     if (!user) {
-      const tenant = await this.tenantRepo.findOne({
-        where: { id: payload.tenant_id, isActive: true },
-      });
-      if (!tenant) {
-        this.logger.warn(`Keycloak user ${payload.sub} has unknown tenant_id: ${payload.tenant_id}`);
-        throw new UnauthorizedException('Unknown tenant');
-      }
-
       user = await this.userRepo.save(
         this.userRepo.create({
           keycloakId: payload.sub,

@@ -14,6 +14,7 @@ import {
 import { EndCustomer } from '../end-customers/entities/end-customer.entity';
 import { BankClient } from '../bank-clients/entities/bank-client.entity';
 import { OpinionTemplate } from '../opinion-templates/entities/opinion-template.entity';
+import { User, UserRole } from '../users/entities/user.entity';
 import { IsNotEmpty, IsOptional, IsString, IsDateString, IsEnum, IsObject } from 'class-validator';
 import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import type { AuditContext } from '../audit-logs/audit-context';
@@ -39,6 +40,7 @@ export class OpinionRequestsService {
     @InjectRepository(EndCustomer) private readonly endRepo: Repository<EndCustomer>,
     @InjectRepository(BankClient) private readonly bankRepo: Repository<BankClient>,
     @InjectRepository(OpinionTemplate) private readonly templateRepo: Repository<OpinionTemplate>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
     private readonly auditLogs: AuditLogsService,
   ) {}
 
@@ -142,6 +144,16 @@ export class OpinionRequestsService {
 
   async assign(tenantId: string, id: string, lawyerId: string, audit: AuditContext): Promise<OpinionRequest> {
     const r = await this.findOne(tenantId, id);
+    const assignee = await this.userRepo.findOne({ where: { id: lawyerId, tenantId, isActive: true } });
+    if (!assignee) {
+      throw new BadRequestException('Assigned lawyer not found for this tenant');
+    }
+
+    const allowedAssigneeRoles = [UserRole.SENIOR_ADVOCATE, UserRole.PANEL_ADVOCATE];
+    if (!allowedAssigneeRoles.includes(assignee.role)) {
+      throw new BadRequestException('Assigned user must be a senior advocate or panel advocate');
+    }
+
     const previous = r.assignedLawyerId;
     r.assignedLawyerId = lawyerId;
     const saved = await this.repo.save(r);
