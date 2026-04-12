@@ -5,6 +5,10 @@
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
+  "attributes": {
+    "userProfileEnabled": "true",
+    "user-profile.unmanaged-attribute-policy": "ADMIN_EDIT"
+  },
   "roles": {
     "realm": [
       {
