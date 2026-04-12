@@ -26,7 +26,7 @@ export class TenantsController {
   }
 
   @Get(':id')
-  @Roles(UserRole.SUPER_ADMIN, UserRole.FIRM_ADMIN)
+  @Roles(UserRole.SUPER_ADMIN)
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
   }

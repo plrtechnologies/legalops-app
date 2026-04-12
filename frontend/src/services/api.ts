@@ -15,10 +15,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   async (error) => {
-    if (error.response?.status === 401) {
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined;
+    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
+      originalRequest._retry = true;
       try {
         await keycloak.updateToken(30);
-        return api.request(error.config);
+        return api.request(originalRequest);
       } catch {
         keycloak.logout();
       }
